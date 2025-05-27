@@ -14,7 +14,8 @@
   "scripts": {
     "build": "tsc && shx chmod +x dist/*.js",
     "prepare": "npm run build",
-    "watch": "tsc --watch"
+    "watch": "tsc --watch",
+    "start:http": "node dist/mcp-http-bridge.js"
   },
   "repository": {
     "type": "git",
@@ -36,9 +37,12 @@
   "dependencies": {
     "@doist/todoist-api-typescript": "^3.0.3",
     "@modelcontextprotocol/sdk": "0.5.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
     "lowdb": "^7.0.1"
   },
   "devDependencies": {
+    "@types/express": "^5.0.2",
     "@types/node": "^22.10.1",
     "shx": "^0.3.4",
     "typescript": "^5.7.2"

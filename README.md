@@ -1,6 +1,8 @@
 # Todoist MCP Server
 [![smithery badge](https://smithery.ai/badge/@abhiz123/todoist-mcp-server)](https://smithery.ai/server/@abhiz123/todoist-mcp-server)
 
+> This is a fork of [abhiz123/todoist-mcp-server](https://github.com/abhiz123/todoist-mcp-server) with custom modifications. The original project was created by Abhiram Nair.
+
 An MCP (Model Context Protocol) server implementation that integrates Claude with Todoist, enabling natural language task management. This server allows Claude to interact with your Todoist tasks using everyday language.
 
 <a href="https://glama.ai/mcp/servers/fhaif4fv1w">
