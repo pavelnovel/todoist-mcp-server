@@ -71,6 +71,18 @@ const UPDATE_TASK_TOOL: Tool = {
   }
 };
 
+const COMPLETE_TASK_TOOL: Tool = {
+  name: "todoist_complete_task",
+  description: "Complete (close) a task in Todoist by ID",
+  inputSchema: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "ID of the task to complete" }
+    },
+    required: ["id"]
+  }
+};
+
 const DELETE_TASK_TOOL: Tool = {
   name: "todoist_delete_task",
   description: "Delete a task from Todoist by ID",
@@ -191,6 +203,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     CREATE_TASK_TOOL,
     GET_TASKS_TOOL,
     UPDATE_TASK_TOOL,
+    COMPLETE_TASK_TOOL,
     DELETE_TASK_TOOL,
     GET_PROJECTS_TOOL,
     GET_PROJECT_BY_ID_TOOL,
@@ -224,9 +237,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     if (name === "todoist_get_tasks") {
-      const tasks = await todoistClient.getTasks();
+      const { results: tasks } = await todoistClient.getTasks();
       const taskList = tasks.map(task =>
-        `- ${task.content}${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
+        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
       ).join('\n\n');
       return {
         content: [{
@@ -260,6 +273,19 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         isError: false,
       };
     }
+    if (name === "todoist_complete_task") {
+      if (!args) throw new Error("No arguments provided");
+      const { id } = args as { id: string };
+      if (!id) throw new Error("Missing required argument 'id'");
+      await todoistClient.closeTask(id);
+      return {
+        content: [{
+          type: "text",
+          text: `Successfully completed task with ID: ${id}`
+        }],
+        isError: false,
+      };
+    }
     if (name === "todoist_delete_task") {
       if (!args) throw new Error("No arguments provided");
       const { id } = args as { id: string };
@@ -274,7 +300,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     if (name === "todoist_get_projects") {
-      const projects = await todoistClient.getProjects();
+      const { results: projects } = await todoistClient.getProjects();
       const projectList = projects.map(project =>
         `- ${project.name} (ID: ${project.id})`
       ).join('\n');
@@ -301,7 +327,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "todoist_create_project") {
       if (!args) throw new Error("No arguments provided");
       const { name, parent_id, color } = args as { name: string, parent_id?: string, color?: string };
-      const project = await todoistClient.addProject({ name, parentId: parent_id, color });
+      const project = await todoistClient.addProject({ name, parentId: parent_id, color: color as any });
       return {
         content: [{
           type: "text",
@@ -313,7 +339,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "todoist_update_project") {
       if (!args) throw new Error("No arguments provided");
       const { id, name, color } = args as { id: string, name?: string, color?: string };
-      await todoistClient.updateProject(id, { name, color });
+      await todoistClient.updateProject(id, { name, color: color as any });
       return {
         content: [{
           type: "text",
@@ -337,9 +363,9 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "todoist_get_project_tasks") {
       if (!args) throw new Error("No arguments provided");
       const { project_id } = args as { project_id: string };
-      const tasks = await todoistClient.getTasks({ projectId: project_id });
+      const { results: tasks } = await todoistClient.getTasks({ projectId: project_id });
       const taskList = tasks.map(task =>
-        `- ${task.content}${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
+        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
       ).join('\n\n');
       return {
         content: [{
