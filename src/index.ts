@@ -40,6 +40,10 @@ const CREATE_TASK_TOOL: Tool = {
         type: "number",
         description: "Task priority from 1 (normal) to 4 (urgent) (optional)",
         enum: [1, 2, 3, 4]
+      },
+      project_id: {
+        type: "string",
+        description: "ID of the project to add the task to (optional, defaults to Inbox)"
       }
     },
     required: ["content"]
@@ -78,6 +82,21 @@ const COMPLETE_TASK_TOOL: Tool = {
     type: "object",
     properties: {
       id: { type: "string", description: "ID of the task to complete" }
+    },
+    required: ["id"]
+  }
+};
+
+const MOVE_TASK_TOOL: Tool = {
+  name: "todoist_move_task",
+  description: "Move a task to a different project, section, or parent task",
+  inputSchema: {
+    type: "object",
+    properties: {
+      id: { type: "string", description: "ID of the task to move" },
+      project_id: { type: "string", description: "ID of the destination project (optional)" },
+      section_id: { type: "string", description: "ID of the destination section (optional)" },
+      parent_id: { type: "string", description: "ID of the parent task (optional)" }
     },
     required: ["id"]
   }
@@ -183,11 +202,12 @@ if (!TODOIST_API_TOKEN) {
 const todoistClient = new TodoistApi(TODOIST_API_TOKEN);
 
 // Type guards for arguments
-function isCreateTaskArgs(args: unknown): args is { 
+function isCreateTaskArgs(args: unknown): args is {
   content: string;
   description?: string;
   due_string?: string;
   priority?: number;
+  project_id?: string;
 } {
   return (
     typeof args === "object" &&
@@ -204,6 +224,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => ({
     GET_TASKS_TOOL,
     UPDATE_TASK_TOOL,
     COMPLETE_TASK_TOOL,
+    MOVE_TASK_TOOL,
     DELETE_TASK_TOOL,
     GET_PROJECTS_TOOL,
     GET_PROJECT_BY_ID_TOOL,
@@ -226,7 +247,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: args.content,
         description: args.description,
         dueString: args.due_string,
-        priority: args.priority
+        priority: args.priority,
+        projectId: args.project_id,
       });
       return {
         content: [{
@@ -282,6 +304,28 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         content: [{
           type: "text",
           text: `Successfully completed task with ID: ${id}`
+        }],
+        isError: false,
+      };
+    }
+    if (name === "todoist_move_task") {
+      if (!args) throw new Error("No arguments provided");
+      const { id, project_id, section_id, parent_id } = args as {
+        id: string;
+        project_id?: string;
+        section_id?: string;
+        parent_id?: string;
+      };
+      if (!id) throw new Error("Missing required argument 'id'");
+      const moveArgs: any = {};
+      if (project_id) moveArgs.projectId = project_id;
+      if (section_id) moveArgs.sectionId = section_id;
+      if (parent_id) moveArgs.parentId = parent_id;
+      const task = await todoistClient.moveTask(id, moveArgs);
+      return {
+        content: [{
+          type: "text",
+          text: `Moved task "${task.content}" (ID: ${task.id})`
         }],
         isError: false,
       };
