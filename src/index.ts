@@ -259,14 +259,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       };
     }
     if (name === "todoist_get_tasks") {
-      const { results: tasks } = await todoistClient.getTasks();
-      const taskList = tasks.map(task =>
-        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
+      const allTasks: Awaited<ReturnType<typeof todoistClient.getTasks>>['results'] = [];
+      let cursor: string | null | undefined = undefined;
+      do {
+        const response = await todoistClient.getTasks({ cursor: cursor ?? undefined });
+        allTasks.push(...response.results);
+        cursor = response.nextCursor;
+      } while (cursor);
+      const taskList = allTasks.map(task =>
+        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}${task.addedAt ? `\n  Created: ${task.addedAt}` : ''}`
       ).join('\n\n');
       return {
         content: [{
           type: "text",
-          text: tasks.length > 0 ? taskList : "No tasks found."
+          text: allTasks.length > 0 ? taskList : "No tasks found."
         }],
         isError: false,
       };
@@ -407,14 +413,20 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     if (name === "todoist_get_project_tasks") {
       if (!args) throw new Error("No arguments provided");
       const { project_id } = args as { project_id: string };
-      const { results: tasks } = await todoistClient.getTasks({ projectId: project_id });
-      const taskList = tasks.map(task =>
-        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}`
+      const allTasks: Awaited<ReturnType<typeof todoistClient.getTasks>>['results'] = [];
+      let cursor: string | null | undefined = undefined;
+      do {
+        const response = await todoistClient.getTasks({ projectId: project_id, cursor: cursor ?? undefined });
+        allTasks.push(...response.results);
+        cursor = response.nextCursor;
+      } while (cursor);
+      const taskList = allTasks.map(task =>
+        `- ${task.content} (ID: ${task.id})${task.description ? `\n  Description: ${task.description}` : ''}${task.due ? `\n  Due: ${task.due.string}` : ''}${task.priority ? `\n  Priority: ${task.priority}` : ''}${task.addedAt ? `\n  Created: ${task.addedAt}` : ''}`
       ).join('\n\n');
       return {
         content: [{
           type: "text",
-          text: tasks.length > 0 ? taskList : `No tasks found for project ID: ${project_id}`
+          text: allTasks.length > 0 ? taskList : `No tasks found for project ID: ${project_id}`
         }],
         isError: false,
       };
