@@ -1,6 +1,6 @@
 {
   "name": "@abhiz123/todoist-mcp-server",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "description": "MCP server for Todoist API integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,11 +35,12 @@
   },
   "homepage": "https://github.com/abhiz123/todoist-mcp-server#readme",
   "dependencies": {
-    "@doist/todoist-api-typescript": "^7.1.1",
-    "@modelcontextprotocol/sdk": "0.5.0",
+    "@doist/todoist-api-typescript": "^7.4.0",
+    "@modelcontextprotocol/sdk": "^1.25.3",
     "cors": "^2.8.5",
     "express": "^5.1.0",
-    "lowdb": "^7.0.1"
+    "lowdb": "^7.0.1",
+    "zod": "^3.23.8"
   },
   "devDependencies": {
     "@types/express": "^5.0.2",
